@@ -7,7 +7,15 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    <!-- Example: Add a simple custom banner for development mode -->
+    <script type="text/javascript">
+      if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+      const banner = document.createElement('div');
+      banner.style.cssText = "background:#222;color:#fff;padding:8px 0;text-align:center;font-size:14px;position:fixed;top:0;left:0;width:100%;z-index:9999;";
+      banner.textContent = "Development Mode";
+      document.body.prepend(banner);
+      document.body.style.paddingTop = "40px";
+      }
+    </script>
   </body>
 </html>

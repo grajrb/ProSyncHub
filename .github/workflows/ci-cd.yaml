@@ -1,0 +1,30 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build Frontend Docker image
+        run: |
+          cd ProSyncHub/client
+          docker build -t $REGISTRY/prosync-frontend:$IMAGE_TAG .
+      - name: Build Backend Docker image
+        run: |
+          cd ProSyncHub/server
+          docker build -t $REGISTRY/prosync-backend:$IMAGE_TAG .
+      # Add steps for pushing images and deploying to AKS as needed

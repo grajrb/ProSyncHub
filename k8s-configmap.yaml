@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prosync-config
+  namespace: default
+data:
+  NODE_ENV: "production"
+  # Add other environment variables as needed, e.g. API URLs, feature flags, etc.
