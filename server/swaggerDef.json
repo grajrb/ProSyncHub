@@ -1,0 +1,484 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ProSync Hub API",
+    "version": "1.0.0",
+    "description": "API documentation for ProSync Hub industrial asset management platform."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "assetTag": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "model": { "type": "string" },
+          "manufacturer": { "type": "string" },
+          "serialNumber": { "type": "string" },
+          "installationDate": { "type": "string", "format": "date" },
+          "locationId": { "type": "integer" },
+          "assetTypeId": { "type": "integer" },
+          "parentAssetId": { "type": "integer", "nullable": true },
+          "currentStatus": { 
+            "type": "string", 
+            "enum": ["operational", "maintenance", "offline", "error"],
+            "default": "operational"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "assetTag", "name", "locationId", "assetTypeId"]
+      },
+      "AssetInput": {
+        "type": "object",
+        "properties": {
+          "assetTag": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "model": { "type": "string" },
+          "manufacturer": { "type": "string" },
+          "serialNumber": { "type": "string" },
+          "installationDate": { "type": "string", "format": "date" },
+          "locationId": { "type": "integer" },
+          "assetTypeId": { "type": "integer" },
+          "parentAssetId": { "type": "integer", "nullable": true },
+          "currentStatus": { 
+            "type": "string", 
+            "enum": ["operational", "maintenance", "offline", "error"]
+          }
+        },
+        "required": ["assetTag", "name", "locationId", "assetTypeId"]
+      },
+      "WorkOrder": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "assetId": { "type": "integer" },
+          "status": { 
+            "type": "string", 
+            "enum": ["open", "in_progress", "completed", "cancelled"],
+            "default": "open"
+          },
+          "priority": { 
+            "type": "string", 
+            "enum": ["low", "medium", "high", "critical"],
+            "default": "medium"
+          },
+          "type": { 
+            "type": "string", 
+            "enum": ["preventive", "corrective", "emergency"],
+            "default": "corrective"
+          },
+          "assignedToUserId": { "type": "string", "nullable": true },
+          "reportedByUserId": { "type": "string" },
+          "scheduledDate": { "type": "string", "format": "date-time", "nullable": true },
+          "completionDate": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "title", "assetId", "reportedByUserId"]
+      },
+      "WorkOrderInput": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "assetId": { "type": "integer" },
+          "status": { 
+            "type": "string", 
+            "enum": ["open", "in_progress", "completed", "cancelled"]
+          },
+          "priority": { 
+            "type": "string", 
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "type": { 
+            "type": "string", 
+            "enum": ["preventive", "corrective", "emergency"]
+          },
+          "assignedToUserId": { "type": "string" },
+          "reportedByUserId": { "type": "string" },
+          "scheduledDate": { "type": "string", "format": "date-time" },
+          "completionDate": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "assetId", "reportedByUserId"]
+      },
+      "MaintenanceSchedule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "assetId": { "type": "integer" },
+          "taskDescription": { "type": "string" },
+          "frequency": { "type": "string" },
+          "nextDueDate": { "type": "string", "format": "date" },
+          "lastPerformedDate": { "type": "string", "format": "date", "nullable": true },
+          "isActive": { "type": "boolean", "default": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "assetId", "taskDescription", "frequency", "nextDueDate"]
+      },
+      "MaintenanceScheduleInput": {
+        "type": "object",
+        "properties": {
+          "assetId": { "type": "integer" },
+          "taskDescription": { "type": "string" },
+          "frequency": { "type": "string" },
+          "nextDueDate": { "type": "string", "format": "date" },
+          "lastPerformedDate": { "type": "string", "format": "date" },
+          "isActive": { "type": "boolean" }
+        },
+        "required": ["assetId", "taskDescription", "frequency", "nextDueDate"]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { 
+            "type": "string", 
+            "enum": ["info", "warning", "error", "success"],
+            "default": "info"
+          },
+          "isRead": { "type": "boolean", "default": false },
+          "relatedEntityType": { "type": "string", "nullable": true },
+          "relatedEntityId": { "type": "integer", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "title", "message"]
+      },
+      "NotificationInput": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { 
+            "type": "string", 
+            "enum": ["info", "warning", "error", "success"]
+          },
+          "relatedEntityType": { "type": "string" },
+          "relatedEntityId": { "type": "integer" }
+        },
+        "required": ["userId", "title", "message"]
+      },
+      "AssetSensorReading": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "assetId": { "type": "integer" },
+          "sensorType": { "type": "string" },
+          "value": { "type": "number" },
+          "unit": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "assetId", "sensorType", "value", "unit"]
+      },
+      "AssetSensorReadingInput": {
+        "type": "object",
+        "properties": {
+          "assetId": { "type": "integer" },
+          "sensorType": { "type": "string" },
+          "value": { "type": "number" },
+          "unit": { "type": "string" }
+        },
+        "required": ["assetId", "sensorType", "value", "unit"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "profileImageUrl": { "type": "string" },
+          "roleId": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "errors": { 
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        },
+        "required": ["message"]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/assets": {
+      "get": {
+        "summary": "Get a list of assets",
+        "tags": ["Assets"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "locationId",
+            "schema": { "type": "integer" },
+            "description": "Filter by location ID"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": { "type": "string", "enum": ["operational", "maintenance", "offline", "error"] },
+            "description": "Filter by asset status"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer" },
+            "description": "Limit number of results"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": { "type": "integer" },
+            "description": "Offset for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of assets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Asset" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "post": {
+        "summary": "Create a new asset",
+        "tags": ["Assets"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssetInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asset created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Asset" }
+              }
+            }
+          },
+          "400": { "description": "Invalid asset data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/assets/{id}": {
+      "get": {
+        "summary": "Get asset by ID",
+        "tags": ["Assets"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Asset ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Asset" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "summary": "Update asset by ID",
+        "tags": ["Assets"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Asset ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssetInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Asset updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Asset" }
+              }
+            }
+          },
+          "400": { "description": "Invalid asset data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Delete asset by ID",
+        "tags": ["Assets"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Asset ID"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Asset deleted" },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/work-orders": {
+      "get": {
+        "summary": "Get a list of work orders",
+        "tags": ["WorkOrders"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": { "type": "string", "enum": ["open", "in_progress", "completed", "cancelled"] },
+            "description": "Filter by status"
+          },
+          {
+            "in": "query",
+            "name": "assignedToUserId",
+            "schema": { "type": "string" },
+            "description": "Filter by assigned user"
+          },
+          {
+            "in": "query",
+            "name": "assetId",
+            "schema": { "type": "integer" },
+            "description": "Filter by asset"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer" },
+            "description": "Limit number of results"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": { "type": "integer" },
+            "description": "Offset for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of work orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/WorkOrder" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "post": {
+        "summary": "Create a new work order",
+        "tags": ["WorkOrders"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WorkOrderInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Work order created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WorkOrder" }
+              }
+            }
+          },
+          "400": { "description": "Invalid work order data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import { swaggerDefinition, apis } from './swaggerDef.js';
+import { authenticateJWT, authorizeRoles, AuthRequest } from './authMiddleware.js';
 
 const app = express();
 app.use(express.json());
@@ -41,6 +42,9 @@ app.use((req, res, next) => {
 
 const swaggerSpec = swaggerJSDoc({ swaggerDefinition, apis });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Example: Protect all /api routes by default (customize as needed)
+app.use('/api', authenticateJWT);
 
 (async () => {
   const server = await registerRoutes(app);

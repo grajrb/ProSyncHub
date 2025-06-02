@@ -58,7 +58,7 @@ A secure, scalable, and real-time full-stack application for industrial asset ma
 - Use Azure Monitor for metrics/logs
 
 ## API Documentation
-- REST API: See backend code and planned OpenAPI/Swagger docs
+- REST API: See backend code and [OpenAPI/Swagger documentation](http://localhost:5000/api-docs)
 
 ## Architecture
 - See `attached_assets/Pasted-Full-Stack-Developer-Assignment-ProSync-Hub-Real-time-Collaborative-Industrial-Asset-Management--1748620520729.txt` for LLD, DB schema, and diagrams
