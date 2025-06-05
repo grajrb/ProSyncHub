@@ -30,6 +30,38 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, count } from "drizzle-orm";
+import ChatMessage, { IChatMessage } from "./models/ChatMessage";
+import Checklist, { IChecklist } from "./models/Checklist";
+
+// Use plain object types for creation
+export type ChatMessageCreate = {
+  userId: string;
+  username: string;
+  message: string;
+  roomId: string;
+  timestamp: Date;
+  isSystemMessage: boolean;
+  attachments?: Array<{ type: string; url: string; name: string }>;
+  readBy: string[];
+};
+
+export type ChecklistCreate = {
+  title: string;
+  description?: string;
+  type: 'maintenance' | 'inspection' | 'safety' | 'procedure' | 'other';
+  assetId?: string;
+  workOrderId?: string;
+  assignedTo?: string[];
+  dueDate?: Date;
+  status: 'draft' | 'active' | 'completed' | 'overdue' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  items: any[];
+  progress: number;
+  createdBy: string;
+  modifiedBy?: string;
+  completedBy?: string;
+  completedAt?: Date;
+};
 
 export interface IStorage {
   // User operations
@@ -78,6 +110,17 @@ export interface IStorage {
     activeWorkOrders: number;
     activeAlerts: number;
   }>;
+
+  // ChatMessage operations
+  createChatMessage(message: IChatMessage): Promise<IChatMessage>;
+  getChatMessages(roomId: string, limit?: number): Promise<IChatMessage[]>;
+  deleteChatMessage(id: string): Promise<boolean>;
+
+  // Checklist operations
+  createChecklist(checklist: IChecklist): Promise<IChecklist>;
+  getChecklists(filters: Partial<IChecklist>): Promise<IChecklist[]>;
+  updateChecklist(id: string, updates: Partial<IChecklist>): Promise<IChecklist | null>;
+  deleteChecklist(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -104,30 +147,29 @@ export class DatabaseStorage implements IStorage {
 
   // Asset operations
   async createAsset(asset: InsertAsset): Promise<Asset> {
-    const [newAsset] = await db.insert(assets).values(asset).returning();
-    return newAsset;
+    const result = await db.insert(assets).values(asset).returning();
+    // Drizzle always returns an array for Postgres
+    if (!Array.isArray(result) || result.length === 0) throw new Error('Failed to create asset');
+    return result[0];
   }
 
   async getAssets(filters?: { locationId?: number; status?: string; limit?: number; offset?: number }): Promise<Asset[]> {
-    let query = db.select().from(assets);
-    
+    const conditions = [];
     if (filters?.locationId) {
-      query = query.where(eq(assets.locationId, filters.locationId));
+      conditions.push(eq(assets.locationId, filters.locationId));
     }
-    
     if (filters?.status) {
-      query = query.where(eq(assets.currentStatus, filters.status as any));
+      conditions.push(eq(assets.currentStatus, filters.status as any));
     }
-    
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    let query = db.select().from(assets).where(whereClause).orderBy(desc(assets.createdAt));
+    if (filters?.limit !== undefined) {
+      query = (query as any).limit(filters.limit);
     }
-    
-    if (filters?.offset) {
-      query = query.offset(filters.offset);
+    if (filters?.offset !== undefined) {
+      query = (query as any).offset(filters.offset);
     }
-    
-    return await query.orderBy(desc(assets.createdAt));
+    return await query;
   }
 
   async getAssetById(id: number): Promise<Asset | undefined> {
@@ -146,7 +188,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAsset(id: number): Promise<boolean> {
     const result = await db.delete(assets).where(eq(assets.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAssetHierarchy(parentId?: number): Promise<Asset[]> {
@@ -163,35 +205,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkOrders(filters?: { status?: string; assignedToUserId?: string; assetId?: number; limit?: number; offset?: number }): Promise<WorkOrder[]> {
-    let query = db.select().from(workOrders);
-    
     const conditions = [];
-    
     if (filters?.status) {
       conditions.push(eq(workOrders.status, filters.status as any));
     }
-    
     if (filters?.assignedToUserId) {
       conditions.push(eq(workOrders.assignedToUserId, filters.assignedToUserId));
     }
-    
     if (filters?.assetId) {
       conditions.push(eq(workOrders.assetId, filters.assetId));
     }
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    let query = db.select().from(workOrders).where(whereClause).orderBy(desc(workOrders.createdAt));
+    if (filters?.limit !== undefined) {
+      query = (query as any).limit(filters.limit);
     }
-    
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
+    if (filters?.offset !== undefined) {
+      query = (query as any).offset(filters.offset);
     }
-    
-    if (filters?.offset) {
-      query = query.offset(filters.offset);
-    }
-    
-    return await query.orderBy(desc(workOrders.createdAt));
+    return await query;
   }
 
   async getWorkOrderById(id: number): Promise<WorkOrder | undefined> {
@@ -217,6 +249,11 @@ export class DatabaseStorage implements IStorage {
     return workOrder;
   }
 
+  async deleteWorkOrder(id: number): Promise<boolean> {
+    const result = await db.delete(workOrders).where(eq(workOrders.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
   // Maintenance operations
   async createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
     const [newSchedule] = await db.insert(maintenanceSchedules).values(schedule).returning();
@@ -224,21 +261,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMaintenanceSchedules(filters?: { assetId?: number; overdue?: boolean }): Promise<MaintenanceSchedule[]> {
-    let query = db.select().from(maintenanceSchedules);
-    
     const conditions = [eq(maintenanceSchedules.isActive, true)];
-    
     if (filters?.assetId) {
       conditions.push(eq(maintenanceSchedules.assetId, filters.assetId));
     }
-    
     if (filters?.overdue) {
       conditions.push(sql`${maintenanceSchedules.nextDueDate} < CURRENT_DATE`);
     }
-    
-    query = query.where(and(...conditions));
-    
-    return await query.orderBy(maintenanceSchedules.nextDueDate);
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    return await db.select().from(maintenanceSchedules).where(whereClause).orderBy(maintenanceSchedules.nextDueDate);
   }
 
   async updateMaintenanceSchedule(id: number, updates: Partial<InsertMaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
@@ -257,13 +288,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserNotifications(userId: string, unreadOnly?: boolean): Promise<Notification[]> {
-    let query = db.select().from(notifications).where(eq(notifications.userId, userId));
-    
+    let conditions = [eq(notifications.userId, userId)];
     if (unreadOnly) {
-      query = query.where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+      conditions.push(eq(notifications.isRead, false));
     }
-    
-    return await query.orderBy(desc(notifications.createdAt)).limit(50);
+    const whereClause = and(...conditions);
+    return await db.select().from(notifications).where(whereClause).orderBy(desc(notifications.createdAt)).limit(50);
   }
 
   async markNotificationAsRead(id: number): Promise<boolean> {
@@ -271,7 +301,7 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Sensor data operations
@@ -281,16 +311,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLatestSensorReadings(assetId: number, sensorType?: string): Promise<AssetSensorReading[]> {
-    let query = db.select().from(assetSensorReadings).where(eq(assetSensorReadings.assetId, assetId));
-    
+    let conditions = [eq(assetSensorReadings.assetId, assetId)];
     if (sensorType) {
-      query = query.where(and(
-        eq(assetSensorReadings.assetId, assetId),
-        eq(assetSensorReadings.sensorType, sensorType)
-      ));
+      conditions.push(eq(assetSensorReadings.sensorType, sensorType));
     }
-    
-    return await query.orderBy(desc(assetSensorReadings.timestamp)).limit(10);
+    const whereClause = and(...conditions);
+    return await db.select().from(assetSensorReadings).where(whereClause).orderBy(desc(assetSensorReadings.timestamp)).limit(10);
   }
 
   // Reference data operations
@@ -303,13 +329,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLocations(plantId?: number): Promise<Location[]> {
-    let query = db.select().from(locations);
-    
+    let whereClause = undefined;
     if (plantId) {
-      query = query.where(eq(locations.plantId, plantId));
+      whereClause = eq(locations.plantId, plantId);
     }
-    
-    return await query;
+    return await db.select().from(locations).where(whereClause);
   }
 
   async getAssetTypes(): Promise<AssetType[]> {
@@ -344,6 +368,41 @@ export class DatabaseStorage implements IStorage {
       activeAlerts: activeAlertsResult.count,
     };
   }
-}
 
-export const storage = new DatabaseStorage();
+  // ChatMessage operations
+  async createChatMessage(message: ChatMessageCreate): Promise<IChatMessage> {
+    const newMessage = await ChatMessage.create(message);
+    return newMessage as IChatMessage;
+  }
+
+  async getChatMessages(roomId: string, limit = 50): Promise<IChatMessage[]> {
+    return await ChatMessage.find({ roomId }).sort({ timestamp: -1 }).limit(limit);
+  }
+
+  async deleteChatMessage(id: string): Promise<boolean> {
+    const result = await ChatMessage.findByIdAndDelete(id);
+    return !!result;
+  }
+
+  // Checklist operations
+  async createChecklist(checklist: ChecklistCreate): Promise<IChecklist> {
+    const newChecklist = await Checklist.create(checklist);
+    return newChecklist as IChecklist;
+  }
+
+  async getChecklists(filters: Partial<IChecklist>): Promise<IChecklist[]> {
+    // Assuming Checklist is a Mongoose model or similar ORM
+    return (await Checklist.find(filters as any)) as unknown as IChecklist[];
+  }
+
+  async updateChecklist(id: string, updates: Partial<IChecklist>): Promise<IChecklist | null> {
+    // Assuming Checklist is a Mongoose model or similar ORM
+    return (await Checklist.findByIdAndUpdate(id, updates, { new: true })) as unknown as IChecklist | null;
+  }
+
+  async deleteChecklist(id: string): Promise<boolean> {
+    // Assuming Checklist is a Mongoose model or similar ORM
+    const result = await Checklist.findByIdAndDelete(id);
+    return !!result;
+  }
+}

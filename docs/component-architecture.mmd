@@ -1,0 +1,34 @@
+---
+title: ProSyncHub Component Communication Flow
+---
+
+flowchart TD
+  subgraph Frontend
+    A[React App]
+  end
+  subgraph Backend
+    B[Express API]
+    C[Socket.IO]
+    D[Winston/Pino Logger]
+  end
+  subgraph Azure
+    E[Azure PostgreSQL]
+    F[Azure Cosmos DB]
+    G[Azure Redis]
+    H[Application Insights]
+    I[Azure Monitor]
+  end
+  subgraph External
+    J[Grafana]
+  end
+
+  A -- REST/GraphQL --> B
+  A -- WebSocket --> C
+  B -- SQL --> E
+  B -- NoSQL --> F
+  B -- Cache/Session --> G
+  B -- Logs --> D
+  D -- Telemetry --> H
+  D -- Metrics/Logs --> I
+  H -- Dashboards/Alerts --> I
+  I -- DataSource --> J

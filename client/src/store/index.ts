@@ -3,6 +3,9 @@ import authReducer from './slices/authSlice';
 import assetReducer from './slices/assetSlice';
 import workOrderReducer from './slices/workOrderSlice';
 import notificationReducer from './slices/notificationSlice';
+import maintenanceReducer from './slices/maintenanceSlice';
+import analyticsReducer from './slices/analyticsSlice';
+import chatReducer from './slices/chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +13,9 @@ export const store = configureStore({
     assets: assetReducer,
     workOrders: workOrderReducer,
     notifications: notificationReducer,
+    maintenance: maintenanceReducer,
+    analytics: analyticsReducer,
+    chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

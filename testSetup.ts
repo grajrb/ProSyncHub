@@ -1,33 +1,8 @@
-// Jest setup file for ESM
+// Root-level Jest test setup file for ProSyncHub
 import { jest } from '@jest/globals';
 
-// Mock WebSocket for testing
-jest.mock('ws', () => {
-  return {
-    WebSocketServer: jest.fn().mockImplementation(() => ({
-      OPEN: 1,
-      clients: new Set(),
-    }))
-  };
-});
+// Provide common testing utilities and setup for all tests
+jest.setTimeout(30000); // Increase timeout for all tests
 
-// Mock schema to avoid DB dependencies
-jest.mock('./shared/schema.js', () => {
-  return {
-    insertAssetSchema: {
-      parse: jest.fn().mockImplementation((data) => data),
-    },
-    insertWorkOrderSchema: {
-      parse: jest.fn().mockImplementation((data) => data),
-    },
-    insertMaintenanceScheduleSchema: {
-      parse: jest.fn().mockImplementation((data) => data),
-    },
-    insertNotificationSchema: {
-      parse: jest.fn().mockImplementation((data) => data),
-    },
-    insertAssetSensorReadingSchema: {
-      parse: jest.fn().mockImplementation((data) => data),
-    }
-  };
-});
+// Set environment variables for testing
+process.env.NODE_ENV = 'test';

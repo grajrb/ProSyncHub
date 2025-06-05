@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import * as WebSocket from "ws";
-const { WebSocketServer } = WebSocket;
-import { storage } from "./storage";
+import WebSocket, { WebSocketServer } from "ws";
+import { DatabaseStorage } from "./storage";
 import { insertAssetSchema, insertWorkOrderSchema, insertMaintenanceScheduleSchema, insertNotificationSchema, insertAssetSensorReadingSchema } from "@shared/schema";
 import { z } from "zod";
 import { authenticateJWT, authorizeRoles, AuthRequest } from './authMiddleware.js';
+import assetCacheService from './services/assetCacheService';
 
 /**
  * @openapi
@@ -206,17 +206,43 @@ import { authenticateJWT, authorizeRoles, AuthRequest } from './authMiddleware.j
 
 import type { Server as HttpServer } from "http";
 
-let wss: any;
+let wss: WebSocketServer | undefined;
 
 // Broadcast helper
 export function broadcastToClients(message: any) {
   if (!wss) return;
   const data = JSON.stringify(message);
-  (wss.clients as any).forEach((client: any) => {
-    if (client.readyState === (WebSocketServer as any).OPEN) {
+  wss.clients.forEach((client: WebSocket) => {
+    if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
   });
+  
+  // Also publish to Redis for distributed architectures
+  try {
+    const { publishToChannel } = require('./services/websocketService').default;
+    if (message.type) {
+      let channel = 'events:global';
+      
+      // Route message to appropriate channel based on type
+      if (message.type.startsWith('ASSET_')) {
+        channel = 'events:assets';
+      } else if (message.type.startsWith('SENSOR_')) {
+        channel = 'events:sensors';
+      } else if (message.type.startsWith('WORK_ORDER_')) {
+        channel = 'events:workorders';
+      } else if (message.type.startsWith('MAINTENANCE_')) {
+        channel = 'events:maintenance';
+      } else if (message.type === 'NOTIFICATION') {
+        channel = 'events:notifications';
+      }
+      
+      publishToChannel(channel, message).catch(console.error);
+    }
+  } catch (error) {
+    // Silently fail if the websocket service is not yet available
+    // This handles circular dependency issues
+  }
 }
 
 // Helper to wrap async route handlers for Express
@@ -233,12 +259,20 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   const server = createServer(app);
 
   // Initialize WebSocket server
-  wss = new (WebSocketServer as any)({ server, path: "/ws" });
-  wss.on("connection", (ws: any) => {
-    ws.on("message", (msg: any) => {
+  wss = new WebSocketServer({ server, path: "/ws" });
+  wss.on("connection", (ws: WebSocket) => {
+    ws.on("message", (msg: WebSocket.RawData) => {
       // Optionally handle incoming messages from clients
     });
   });
+  
+  // Initialize the websocket service with Redis integration
+  try {
+    const websocketService = require('./services/websocketService').default;
+    websocketService.initializeWebSocketServer(server);
+  } catch (error) {
+    console.error('Error initializing websocket service:', error);
+  }
 
   // RBAC: Restrict asset CRUD endpoints
   app.get('/api/assets', authorizeRoles('admin', 'supervisor', 'technician', 'operator') as any, asyncHandler(async (req: AuthRequest, res) => {
@@ -272,6 +306,12 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     const updates = req.body;
     const asset = await storage.updateAsset(id, updates);
     if (!asset) return res.status(404).json({ message: 'Asset not found' });
+    // Invalidate asset cache
+    await assetCacheService.clearAssetCaches(String(id));
+    // Publish to Redis for real-time update
+    if (req.app && req.app.locals && req.app.locals.redisPublisher) {
+      req.app.locals.redisPublisher.publish('asset-events', JSON.stringify({ type: 'ASSET_UPDATED', payload: asset }));
+    }
     broadcastToClients({ type: 'ASSET_UPDATED', payload: asset });
     res.json(asset);
   }));
@@ -281,6 +321,12 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     const success = await storage.deleteAsset(id);
     if (!success) {
       return res.status(404).json({ message: "Asset not found" });
+    }
+    // Invalidate asset cache
+    await assetCacheService.clearAssetCaches(String(id));
+    // Publish to Redis for real-time delete
+    if (req.app && req.app.locals && req.app.locals.redisPublisher) {
+      req.app.locals.redisPublisher.publish('asset-events', JSON.stringify({ type: 'ASSET_DELETED', payload: { id } }));
     }
     // Broadcast asset deletion to all connected clients
     broadcastToClients({
@@ -383,7 +429,16 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
 
   app.delete('/api/work-orders/:id', authorizeRoles('admin') as any, asyncHandler(async (req: AuthRequest, res) => {
     const id = parseInt(req.params.id);
-    // Implement delete logic if needed
+    // Delete the work order from the database
+    const deleted = await storage.deleteWorkOrder(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Work order not found' });
+    }
+    // Publish to Redis for real-time delete
+    const { publishToChannel } = require('./services/websocketService').default;
+    await publishToChannel('events:workorders', { type: 'WORK_ORDER_DELETED', payload: { id } });
+    // Broadcast to websocket clients as well
+    broadcastToClients({ type: 'WORK_ORDER_DELETED', payload: { id } });
     res.status(204).send();
   }));
 
@@ -505,3 +560,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
 
   return server;
 }
+
+// Instantiate storage for use in all routes
+const storage = new DatabaseStorage();

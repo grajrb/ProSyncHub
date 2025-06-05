@@ -8,7 +8,7 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 
-export function Toaster() {
+function Toaster() {
   const { toasts } = useToast()
 
   return (
@@ -31,3 +31,7 @@ export function Toaster() {
     </ToastProvider>
   )
 }
+
+// Rename this file to Toaster.tsx to fix Vite/Node case-sensitivity issues on some systems.
+// Remove the named export to avoid confusion, only export default
+export default Toaster;

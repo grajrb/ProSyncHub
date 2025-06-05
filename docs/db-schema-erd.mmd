@@ -1,0 +1,84 @@
+---
+title: ProSyncHub DB Schema (ERD)
+---
+
+erDiagram
+    USER ||--o{ WORK_ORDER : creates
+    USER ||--o{ CHAT_MESSAGE : sends
+    USER ||--o{ NOTIFICATION : receives
+    ASSET ||--o{ SENSOR : has
+    ASSET ||--o{ MAINTENANCE_TASK : scheduled_for
+    ASSET ||--o{ WORK_ORDER : related_to
+    SENSOR ||--o{ SENSOR_DATA : logs
+    MAINTENANCE_TASK ||--o{ CHECKLIST : uses
+    WORK_ORDER ||--o{ EVENT_LOG : logs
+    
+    USER {
+      string id PK
+      string email
+      string firstName
+      string lastName
+      string[] roles
+    }
+    ASSET {
+      int id PK
+      string name
+      string type
+      string location
+    }
+    SENSOR {
+      string id PK
+      int assetId FK
+      string name
+      string type
+      string unit
+    }
+    SENSOR_DATA {
+      string id PK
+      string sensorId FK
+      timestamp timestamp
+      float value
+      string status
+    }
+    MAINTENANCE_TASK {
+      int id PK
+      int assetId FK
+      string description
+      string status
+      timestamp scheduledFor
+    }
+    CHECKLIST {
+      int id PK
+      int taskId FK
+      string item
+      bool completed
+    }
+    WORK_ORDER {
+      int id PK
+      int assetId FK
+      int createdBy FK
+      string status
+      timestamp createdAt
+    }
+    EVENT_LOG {
+      int id PK
+      int workOrderId FK
+      string eventType
+      string message
+      timestamp createdAt
+    }
+    CHAT_MESSAGE {
+      string id PK
+      string senderId FK
+      string content
+      timestamp sentAt
+    }
+    NOTIFICATION {
+      int id PK
+      string userId FK
+      string title
+      string message
+      string type
+      bool isRead
+      timestamp createdAt
+    }

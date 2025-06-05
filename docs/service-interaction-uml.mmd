@@ -1,0 +1,45 @@
+---
+title: ProSyncHub Service Interaction (UML)
+---
+
+classDiagram
+    class UserService {
+      +getUser()
+      +createUser()
+      +updateUser()
+    }
+    class AssetService {
+      +getAssets()
+      +getAssetById()
+    }
+    class SensorService {
+      +getSensors()
+      +getSensorData()
+    }
+    class MaintenanceService {
+      +getTasks()
+      +scheduleTask()
+    }
+    class WorkOrderService {
+      +getWorkOrders()
+      +createWorkOrder()
+    }
+    class NotificationService {
+      +getNotifications()
+      +sendNotification()
+    }
+    class ChatService {
+      +getThreads()
+      +sendMessage()
+    }
+    class EventLogService {
+      +logEvent()
+      +getEvents()
+    }
+    UserService --> NotificationService : notifies
+    UserService --> WorkOrderService : creates
+    AssetService --> SensorService : owns
+    AssetService --> MaintenanceService : schedules
+    WorkOrderService --> EventLogService : logs
+    SensorService --> NotificationService : alerts
+    ChatService --> UserService : participants

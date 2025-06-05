@@ -16,11 +16,94 @@ spec:
         - name: backend
           image: <BACKEND_IMAGE>
           ports:
-            - containerPort: 5000
+            - containerPort: 3001
           env:
             - name: NODE_ENV
-              value: "production"
-            # Add DB/Redis/Cosmos connection strings as needed
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: PORT
+            # MongoDB Configuration
+            - name: MONGODB_URI
+              value: "mongodb://$(MONGODB_USERNAME):$(MONGODB_PASSWORD)@$(MONGODB_HOST):$(MONGODB_PORT)/$(MONGODB_DB_NAME)?authSource=admin"
+            - name: MONGODB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: MONGODB_HOST
+            - name: MONGODB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: MONGODB_PORT
+            - name: MONGODB_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: MONGODB_DB_NAME
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: prosync-secrets
+                  key: mongodb-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: prosync-secrets
+                  key: mongodb-password
+            # Redis Configuration
+            - name: REDIS_URL
+              value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: REDIS_PORT
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: prosync-secrets
+                  key: redis-password
+            # JWT Configuration
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: prosync-secrets
+                  key: jwt-secret
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: prosync-config
+                  key: JWT_EXPIRES_IN
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service

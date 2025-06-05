@@ -1,20 +1,32 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+
+type User = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  profileImageUrl?: string;
+};
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User };
 
   // Fetch unread notifications count
-  const { data: notifications } = useQuery({
+  const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications", { unreadOnly: true }],
   });
 
   // Fetch pending work orders count
-  const { data: workOrders } = useQuery({
+  const { data: workOrders = [] } = useQuery<any[]>({
     queryKey: ["/api/work-orders", { status: "open" }],
+  });
+
+  // Fetch maintenance tasks requiring attention
+  const { data: maintenanceTasks = [] } = useQuery<any[]>({
+    queryKey: ["/api/maintenance/tasks", { status: "scheduled" }],
   });
 
   const isActive = (path: string) => {
@@ -50,16 +62,36 @@ export default function Sidebar() {
       path: "/maintenance",
       icon: "fas fa-calendar-alt",
       label: "Maintenance",
+      badge: maintenanceTasks?.length || 0,
+      hasSubmenu: true,
+      submenu: [
+        { path: "/maintenance", label: "Tasks & Schedule" },
+        { path: "/maintenance/checklists", label: "Checklists" },
+        { path: "/maintenance/history", label: "History" },
+      ],
     },
     {
       path: "/analytics",
       icon: "fas fa-chart-line",
       label: "Analytics",
+      hasSubmenu: true,
+      submenu: [
+        { path: "/analytics", label: "Dashboard" },
+        { path: "/analytics/sensors", label: "Sensor Data" },
+        { path: "/analytics/reports", label: "Reports" },
+        { path: "/analytics/predictions", label: "Predictions" },
+      ],
     },
     {
-      path: "/team",
-      icon: "fas fa-users",
-      label: "Team",
+      path: "/notifications",
+      icon: "fas fa-bell",
+      label: "Notifications",
+      badge: notifications?.length || 0,
+    },
+    {
+      path: "/chat",
+      icon: "fas fa-comments",
+      label: "Team Chat",
     },
   ];
 

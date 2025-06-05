@@ -4,11 +4,32 @@ import { setupVite, serveStatic, log } from "./vite";
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import { swaggerDefinition, apis } from './swaggerDef.js';
-import { authenticateJWT, authorizeRoles, AuthRequest } from './authMiddleware.js';
+import { authenticateJWT, authorizeRoles, AuthRequest } from './authMiddleware';
+import { connectToMongoDB } from './mongodb';
+// import { connectToRedis } from './redis';
+import { connectToRedis } from './redis';
+import mongoRoutes from './routes/mongoRoutes';
+import authRoutes from './routes/authRoutes';
+import sensorRoutes from './routes/sensorRoutes';
+import eventLogRoutes from './routes/eventLogRoutes';
+import chatRoutes from './routes/chatRoutes';
+import checklistRoutes from './routes/checklistRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Initialize MongoDB and Redis connections
+(async () => {
+  try {
+    await connectToMongoDB();
+    await connectToRedis();
+  } catch (error) {
+    console.error('Failed to initialize database connections:', error);
+    process.exit(1);
+  }
+})();
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -43,8 +64,33 @@ app.use((req, res, next) => {
 const swaggerSpec = swaggerJSDoc({ swaggerDefinition, apis });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Example: Protect all /api routes by default (customize as needed)
-app.use('/api', authenticateJWT);
+// Health check endpoint for Kubernetes probes
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Auth routes - these need to be before the JWT middleware
+app.use('/api/auth', authRoutes);
+
+// Protect all /api routes by default (except auth)
+app.use('/api', (req, res, next) => {
+  Promise.resolve(authenticateJWT(req, res, next)).catch(next);
+});
+
+// Import enhanced RBAC middleware
+import { requirePermissionAuto } from './rbac';
+import type { RequestHandler } from "express";
+
+// Apply automatic RBAC to all protected routes (except /api/auth)
+app.use('/api', requirePermissionAuto() as RequestHandler);
+
+// Register MongoDB routes (already protected by the middleware above)
+app.use('/api/mongo', mongoRoutes);
+app.use('/api/sensors', sensorRoutes);
+app.use('/api/event-logs', eventLogRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/checklists', checklistRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 (async () => {
   const server = await registerRoutes(app);

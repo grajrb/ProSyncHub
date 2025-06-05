@@ -6,479 +6,91 @@
     "description": "API documentation for ProSync Hub industrial asset management platform."
   },
   "servers": [
-    {
-      "url": "http://localhost:5000",
-      "description": "Local server"
-    }
-  ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
-    "schemas": {
-      "Asset": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "assetTag": { "type": "string" },
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "model": { "type": "string" },
-          "manufacturer": { "type": "string" },
-          "serialNumber": { "type": "string" },
-          "installationDate": { "type": "string", "format": "date" },
-          "locationId": { "type": "integer" },
-          "assetTypeId": { "type": "integer" },
-          "parentAssetId": { "type": "integer", "nullable": true },
-          "currentStatus": { 
-            "type": "string", 
-            "enum": ["operational", "maintenance", "offline", "error"],
-            "default": "operational"
-          },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "assetTag", "name", "locationId", "assetTypeId"]
-      },
-      "AssetInput": {
-        "type": "object",
-        "properties": {
-          "assetTag": { "type": "string" },
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "model": { "type": "string" },
-          "manufacturer": { "type": "string" },
-          "serialNumber": { "type": "string" },
-          "installationDate": { "type": "string", "format": "date" },
-          "locationId": { "type": "integer" },
-          "assetTypeId": { "type": "integer" },
-          "parentAssetId": { "type": "integer", "nullable": true },
-          "currentStatus": { 
-            "type": "string", 
-            "enum": ["operational", "maintenance", "offline", "error"]
-          }
-        },
-        "required": ["assetTag", "name", "locationId", "assetTypeId"]
-      },
-      "WorkOrder": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "assetId": { "type": "integer" },
-          "status": { 
-            "type": "string", 
-            "enum": ["open", "in_progress", "completed", "cancelled"],
-            "default": "open"
-          },
-          "priority": { 
-            "type": "string", 
-            "enum": ["low", "medium", "high", "critical"],
-            "default": "medium"
-          },
-          "type": { 
-            "type": "string", 
-            "enum": ["preventive", "corrective", "emergency"],
-            "default": "corrective"
-          },
-          "assignedToUserId": { "type": "string", "nullable": true },
-          "reportedByUserId": { "type": "string" },
-          "scheduledDate": { "type": "string", "format": "date-time", "nullable": true },
-          "completionDate": { "type": "string", "format": "date-time", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "title", "assetId", "reportedByUserId"]
-      },
-      "WorkOrderInput": {
-        "type": "object",
-        "properties": {
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "assetId": { "type": "integer" },
-          "status": { 
-            "type": "string", 
-            "enum": ["open", "in_progress", "completed", "cancelled"]
-          },
-          "priority": { 
-            "type": "string", 
-            "enum": ["low", "medium", "high", "critical"]
-          },
-          "type": { 
-            "type": "string", 
-            "enum": ["preventive", "corrective", "emergency"]
-          },
-          "assignedToUserId": { "type": "string" },
-          "reportedByUserId": { "type": "string" },
-          "scheduledDate": { "type": "string", "format": "date-time" },
-          "completionDate": { "type": "string", "format": "date-time" }
-        },
-        "required": ["title", "assetId", "reportedByUserId"]
-      },
-      "MaintenanceSchedule": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "assetId": { "type": "integer" },
-          "taskDescription": { "type": "string" },
-          "frequency": { "type": "string" },
-          "nextDueDate": { "type": "string", "format": "date" },
-          "lastPerformedDate": { "type": "string", "format": "date", "nullable": true },
-          "isActive": { "type": "boolean", "default": true },
-          "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "assetId", "taskDescription", "frequency", "nextDueDate"]
-      },
-      "MaintenanceScheduleInput": {
-        "type": "object",
-        "properties": {
-          "assetId": { "type": "integer" },
-          "taskDescription": { "type": "string" },
-          "frequency": { "type": "string" },
-          "nextDueDate": { "type": "string", "format": "date" },
-          "lastPerformedDate": { "type": "string", "format": "date" },
-          "isActive": { "type": "boolean" }
-        },
-        "required": ["assetId", "taskDescription", "frequency", "nextDueDate"]
-      },
-      "Notification": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "userId": { "type": "string" },
-          "title": { "type": "string" },
-          "message": { "type": "string" },
-          "type": { 
-            "type": "string", 
-            "enum": ["info", "warning", "error", "success"],
-            "default": "info"
-          },
-          "isRead": { "type": "boolean", "default": false },
-          "relatedEntityType": { "type": "string", "nullable": true },
-          "relatedEntityId": { "type": "integer", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "userId", "title", "message"]
-      },
-      "NotificationInput": {
-        "type": "object",
-        "properties": {
-          "userId": { "type": "string" },
-          "title": { "type": "string" },
-          "message": { "type": "string" },
-          "type": { 
-            "type": "string", 
-            "enum": ["info", "warning", "error", "success"]
-          },
-          "relatedEntityType": { "type": "string" },
-          "relatedEntityId": { "type": "integer" }
-        },
-        "required": ["userId", "title", "message"]
-      },
-      "AssetSensorReading": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "assetId": { "type": "integer" },
-          "sensorType": { "type": "string" },
-          "value": { "type": "number" },
-          "unit": { "type": "string" },
-          "timestamp": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "assetId", "sensorType", "value", "unit"]
-      },
-      "AssetSensorReadingInput": {
-        "type": "object",
-        "properties": {
-          "assetId": { "type": "integer" },
-          "sensorType": { "type": "string" },
-          "value": { "type": "number" },
-          "unit": { "type": "string" }
-        },
-        "required": ["assetId", "sensorType", "value", "unit"]
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "firstName": { "type": "string" },
-          "lastName": { "type": "string" },
-          "profileImageUrl": { "type": "string" },
-          "roleId": { "type": "integer" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id"]
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "message": { "type": "string" },
-          "errors": { 
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "path": { "type": "string" },
-                "message": { "type": "string" }
-              }
-            }
-          }
-        },
-        "required": ["message"]
-      }
-    }
-  },
-  "security": [
-    {
-      "bearerAuth": []
-    }
+    { "url": "http://localhost:5000", "description": "Local server" }
   ],
   "paths": {
     "/api/assets": {
-      "get": {
-        "summary": "Get a list of assets",
-        "tags": ["Assets"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "locationId",
-            "schema": { "type": "integer" },
-            "description": "Filter by location ID"
-          },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": { "type": "string", "enum": ["operational", "maintenance", "offline", "error"] },
-            "description": "Filter by asset status"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": { "type": "integer" },
-            "description": "Limit number of results"
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "schema": { "type": "integer" },
-            "description": "Offset for pagination"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of assets",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/Asset" }
-                }
-              }
-            }
-          },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      },
-      "post": {
-        "summary": "Create a new asset",
-        "tags": ["Assets"],
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/AssetInput" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Asset created",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/Asset" }
-              }
-            }
-          },
-          "400": { "description": "Invalid asset data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      }
+      "get": { "summary": "Get a list of assets", "tags": ["Assets"], "responses": { "200": { "description": "List of assets" } } },
+      "post": { "summary": "Create a new asset", "tags": ["Assets"], "responses": { "201": { "description": "Asset created" } } }
     },
     "/api/assets/{id}": {
+      "get": { "summary": "Get asset by ID", "tags": ["Assets"], "responses": { "200": { "description": "Asset details" }, "404": { "description": "Not found" } } },
+      "put": { "summary": "Update asset", "tags": ["Assets"], "responses": { "200": { "description": "Asset updated" } } },
+      "delete": { "summary": "Delete asset", "tags": ["Assets"], "responses": { "200": { "description": "Asset deleted" } } }
+    },
+    "/api/maintenance": {
+      "get": { "summary": "Get maintenance schedules", "tags": ["Maintenance"], "responses": { "200": { "description": "List of schedules" } } },
+      "post": { "summary": "Create maintenance schedule", "tags": ["Maintenance"], "responses": { "201": { "description": "Schedule created" } } }
+    },
+    "/api/notifications": {
+      "get": { "summary": "Get notifications", "tags": ["Notifications"], "responses": { "200": { "description": "List of notifications" } } },
+      "post": { "summary": "Create notification", "tags": ["Notifications"], "responses": { "201": { "description": "Notification created" } } }
+    },
+    "/api/mongo/sensor-data": {
+      "get": { "summary": "Get sensor data with filtering", "tags": ["Sensor Data"], "responses": { "200": { "description": "Sensor data retrieved" } } },
+      "post": { "summary": "Add a new sensor reading", "tags": ["Sensor Data"], "responses": { "201": { "description": "Sensor reading added" } } }
+    },
+    "/api/mongo/sensor-data/{id}": {
+      "get": { "summary": "Get sensor data by ID", "tags": ["Sensor Data"], "responses": { "200": { "description": "Sensor data" }, "404": { "description": "Not found" } } },
+      "put": { "summary": "Update sensor data", "tags": ["Sensor Data"], "responses": { "200": { "description": "Sensor data updated" } } },
+      "patch": { "summary": "Patch sensor data", "tags": ["Sensor Data"], "responses": { "200": { "description": "Sensor data patched" } } },
+      "delete": { "summary": "Delete sensor data", "tags": ["Sensor Data"], "responses": { "200": { "description": "Sensor data deleted" } } }
+    },
+    "/api/mongo/event-logs": {
+      "get": { "summary": "Get event logs with filtering", "tags": ["Event Logs"], "responses": { "200": { "description": "Event logs retrieved" } } },
+      "post": { "summary": "Create a new event log", "tags": ["Event Logs"], "responses": { "201": { "description": "Event log created" } } }
+    },
+    "/api/mongo/event-logs/{id}": {
+      "get": { "summary": "Get event log by ID", "tags": ["Event Logs"], "responses": { "200": { "description": "Event log" }, "404": { "description": "Not found" } } },
+      "put": { "summary": "Update event log", "tags": ["Event Logs"], "responses": { "200": { "description": "Event log updated" } } },
+      "delete": { "summary": "Delete event log", "tags": ["Event Logs"], "responses": { "200": { "description": "Event log deleted" } } }
+    },
+    "/api/mongo/chat-messages": {
+      "get": { "summary": "Get chat messages", "tags": ["Chat Messages"], "responses": { "200": { "description": "Chat messages retrieved" } } },
+      "post": { "summary": "Send chat message", "tags": ["Chat Messages"], "responses": { "201": { "description": "Message sent" } } }
+    },
+    "/api/mongo/checklists": {
+      "get": { "summary": "Get checklists", "tags": ["Checklists"], "responses": { "200": { "description": "Checklists retrieved" } } },
+      "post": { "summary": "Create checklist", "tags": ["Checklists"], "responses": { "201": { "description": "Checklist created" } } }
+    },
+    "/api/mongo/checklists/{id}": {
+      "get": { "summary": "Get checklist by ID", "tags": ["Checklists"], "responses": { "200": { "description": "Checklist" }, "404": { "description": "Not found" } } },
+      "put": { "summary": "Update checklist", "tags": ["Checklists"], "responses": { "200": { "description": "Checklist updated" } } },
+      "delete": { "summary": "Delete checklist", "tags": ["Checklists"], "responses": { "200": { "description": "Checklist deleted" } } }
+    },
+    "/api/analytics/kpi": {
       "get": {
-        "summary": "Get asset by ID",
-        "tags": ["Assets"],
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Get KPIs",
+        "tags": ["Analytics"],
         "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "integer" },
-            "description": "Asset ID"
-          }
+          { "name": "startDate", "in": "query", "required": false, "description": "Start date for KPI calculation", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "required": false, "description": "End date for KPI calculation", "schema": { "type": "string", "format": "date" } }
         ],
         "responses": {
-          "200": {
-            "description": "Asset details",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/Asset" }
-              }
-            }
-          },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      },
-      "put": {
-        "summary": "Update asset by ID",
-        "tags": ["Assets"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "integer" },
-            "description": "Asset ID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/AssetInput" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Asset updated",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/Asset" }
-              }
-            }
-          },
-          "400": { "description": "Invalid asset data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      },
-      "delete": {
-        "summary": "Delete asset by ID",
-        "tags": ["Assets"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "integer" },
-            "description": "Asset ID"
-          }
-        ],
-        "responses": {
-          "204": { "description": "Asset deleted" },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "404": { "description": "Asset not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": { "description": "KPIs retrieved" },
+          "400": { "description": "Invalid date range" }
         }
       }
     },
-    "/api/work-orders": {
+    "/api/analytics/reports": {
+      "get": { "summary": "Get reports", "tags": ["Analytics"], "responses": { "200": { "description": "Reports retrieved" } } }
+    },
+    "/api/predictive/alerts": {
       "get": {
-        "summary": "Get a list of work orders",
-        "tags": ["WorkOrders"],
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Get predictive maintenance alerts",
+        "tags": ["Predictive"],
         "parameters": [
-          {
-            "in": "query",
-            "name": "status",
-            "schema": { "type": "string", "enum": ["open", "in_progress", "completed", "cancelled"] },
-            "description": "Filter by status"
-          },
-          {
-            "in": "query",
-            "name": "assignedToUserId",
-            "schema": { "type": "string" },
-            "description": "Filter by assigned user"
-          },
-          {
-            "in": "query",
-            "name": "assetId",
-            "schema": { "type": "integer" },
-            "description": "Filter by asset"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": { "type": "integer" },
-            "description": "Limit number of results"
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "schema": { "type": "integer" },
-            "description": "Offset for pagination"
-          }
+          { "name": "assetId", "in": "query", "required": false, "description": "Filter alerts by asset ID", "schema": { "type": "string" } },
+          { "name": "severity", "in": "query", "required": false, "description": "Filter alerts by severity", "schema": { "type": "string", "enum": ["low", "medium", "high", "critical"] } }
         ],
         "responses": {
-          "200": {
-            "description": "List of work orders",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/WorkOrder" }
-                }
-              }
-            }
-          },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      },
-      "post": {
-        "summary": "Create a new work order",
-        "tags": ["WorkOrders"],
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/WorkOrderInput" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Work order created",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/WorkOrder" }
-              }
-            }
-          },
-          "400": { "description": "Invalid work order data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "403": { "description": "Forbidden", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": { "description": "Alerts retrieved" },
+          "404": { "description": "No alerts found" }
         }
       }
+    },
+    "/api/sensor-data/ingest": {
+      "post": { "summary": "Ingest or simulate sensor data", "tags": ["Sensor Data"], "responses": { "201": { "description": "Sensor data ingested" } } }
     }
   }
 }
