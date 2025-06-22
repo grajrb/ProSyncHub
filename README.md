@@ -113,8 +113,6 @@ kubectl apply -f kubernetes/frontend.yaml
 
 For cloud-specific deployment instructions, see:
 - [Azure Deployment Guide](docs/azure-deployment.md)
-- [AWS Deployment Guide](docs/aws-deployment.md)
-- [GCP Deployment Guide](docs/gcp-deployment.md)
 
 ## Project Structure
 
