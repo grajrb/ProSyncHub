@@ -43,3 +43,7 @@ server/.env.*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs
+*.log
+**/*.log
