@@ -110,6 +110,7 @@ server/
 
 - Use TypeScript for type safety
 - Follow the [Next.js best practices](https://nextjs.org/docs/advanced-features/best-practices)
+- Review [Next.js Data Fetching Patterns](https://nextjs.org/docs/14/app/building-your-application/data-fetching/patterns)
 - Use ESLint and Prettier for code formatting
 - Use React functional components with hooks
 - Use Tailwind CSS for styling
@@ -344,7 +345,12 @@ Common real-time events:
 ## Resources
 
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Next.js Data Fetching Patterns](https://nextjs.org/docs/14/app/building-your-application/data-fetching/patterns)
 - [Express.js Documentation](https://expressjs.com/)
 - [Sequelize Documentation](https://sequelize.org/)
 - [Mongoose Documentation](https://mongoosejs.com/)
 - [Socket.IO Documentation](https://socket.io/docs/)
+
+---
+
+For questions about documentation, contact the documentation team at docs@prosync.example.com or gauravupadhayay9801@gmail.com.
