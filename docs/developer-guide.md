@@ -353,4 +353,4 @@ Common real-time events:
 
 ---
 
-For questions about documentation, contact the documentation team at docs@prosync.example.com or gauravupadhayay9801@gmail.com.
+For questions about documentation, contact the documentation team at gauravupadhayay9801@gmail.com.
