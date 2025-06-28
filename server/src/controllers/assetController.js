@@ -510,6 +510,140 @@ const getAssetWorkOrders = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
+=======
+// Get asset maintenance schedules
+const getAssetMaintenanceSchedules = async (req, res) => {
+  try {
+    const assetId = req.params.id;
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    // Check if asset exists
+    const asset = await Asset.findByPk(assetId);
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+    
+    // Query for maintenance schedules associated with this asset
+    const maintenanceSchedules = await db.MaintenanceSchedule.findAndCountAll({
+      where: { asset_id: assetId },
+      limit: parseInt(limit),
+      offset,
+      order: [['next_date', 'ASC']]
+    });
+    
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(maintenanceSchedules.count / parseInt(limit));
+    const hasNextPage = parseInt(page) < totalPages;
+    const hasPrevPage = parseInt(page) > 1;
+    
+    res.status(200).json({
+      maintenance_schedules: maintenanceSchedules.rows,
+      pagination: {
+        total: maintenanceSchedules.count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      }
+    });
+  } catch (error) {
+    logger.error(`Error fetching maintenance schedules for asset ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to fetch asset maintenance schedules' });
+  }
+};
+
+// Generate QR code for asset
+const generateAssetQRCode = async (req, res) => {
+  try {
+    const assetId = req.params.id;
+    
+    // Check if asset exists
+    const asset = await Asset.findByPk(assetId);
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+    
+    // In a real implementation, we would generate a QR code here
+    // For this demo, we'll just return a placeholder URL
+    const qrCodeData = {
+      url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/assets/${assetId}`,
+      asset_id: assetId,
+      asset_tag: asset.asset_tag,
+      name: asset.name
+    };
+    
+    res.status(200).json({
+      qr_code_url: `/api/assets/${assetId}/qr-code-image`,
+      qr_code_data: qrCodeData
+    });
+  } catch (error) {
+    logger.error(`Error generating QR code for asset ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to generate asset QR code' });
+  }
+};
+
+// Get asset health score history
+const getAssetHealthHistory = async (req, res) => {
+  try {
+    const assetId = req.params.id;
+    const { timeframe = '30d' } = req.query;
+    
+    // Check if asset exists
+    const asset = await Asset.findByPk(assetId);
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+    
+    // Calculate date range based on timeframe
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    if (timeframe === '7d') {
+      startDate.setDate(endDate.getDate() - 7);
+    } else if (timeframe === '30d') {
+      startDate.setDate(endDate.getDate() - 30);
+    } else if (timeframe === '90d') {
+      startDate.setDate(endDate.getDate() - 90);
+    } else if (timeframe === '1y') {
+      startDate.setFullYear(endDate.getFullYear() - 1);
+    }
+    
+    // In a real implementation, we would query a time-series database
+    // For this demo, we'll generate some random health score data
+    const healthHistory = [];
+    const dayDiff = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    for (let i = 0; i <= dayDiff; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      
+      // Generate a random health score that trends downward over time
+      // with some fluctuations
+      const baseScore = 100 - (i / dayDiff) * 30;
+      const fluctuation = Math.random() * 10 - 5;
+      const healthScore = Math.min(100, Math.max(0, Math.round(baseScore + fluctuation)));
+      
+      healthHistory.push({
+        date: date.toISOString().split('T')[0],
+        health_score: healthScore
+      });
+    }
+    
+    res.status(200).json({
+      asset_id: assetId,
+      timeframe,
+      health_history: healthHistory
+    });
+  } catch (error) {
+    logger.error(`Error fetching health history for asset ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to fetch asset health history' });
+  }
+};
+
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 module.exports = {
   getAllAssets,
   getAssetById,
@@ -518,5 +652,12 @@ module.exports = {
   deleteAsset,
   getAssetSensorReadings,
   getAssetEvents,
+<<<<<<< HEAD
   getAssetWorkOrders
+=======
+  getAssetWorkOrders,
+  getAssetMaintenanceSchedules,
+  generateAssetQRCode,
+  getAssetHealthHistory
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 };

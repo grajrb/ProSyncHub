@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
+<<<<<<< HEAD
 const analyticsController = require('../controllers/analyticsController');
+=======
+const analyticsController = require('../controllers/analyticsController.fixed');
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 
 // Get dashboard statistics
 router.get('/dashboard', authenticateToken, analyticsController.getDashboardStats);
@@ -28,6 +32,10 @@ router.get('/alerts', authenticateToken, analyticsController.getAlertStats);
 router.get('/predicted-failures', authenticateToken, analyticsController.getPredictedFailures);
 
 // Get maintenance cost breakdown
+<<<<<<< HEAD
 router.get('/maintenance-costs', authenticateToken, analyticsController.getMaintenanceCosts);
+=======
+router.get('/maintenance-costs', authenticateToken, analyticsController.getMaintenanceCostBreakdown);
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 
 module.exports = router;

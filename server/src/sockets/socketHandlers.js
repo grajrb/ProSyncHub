@@ -1,5 +1,9 @@
 const winston = require('winston');
+<<<<<<< HEAD
 const { redisClient } = require('../config/redisConfig');
+=======
+const { connectRedis, getRedisClient } = require('../config/redisConfig');
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 const { createNotificationInternal } = require('../controllers/notificationController');
 
 // Logger
@@ -25,6 +29,10 @@ function setupSocketHandlers(io) {
   // Subscribe to Redis channels
   const setupRedisSubscriber = async () => {
     try {
+<<<<<<< HEAD
+=======
+      const redisClient = getRedisClient();
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
       const subscriber = redisClient.duplicate();
       await subscriber.connect();
       
@@ -272,6 +280,11 @@ function setupSocketHandlers(io) {
 async function setupRedisPubSub(io) {
   try {
     const redisClient = getRedisClient();
+<<<<<<< HEAD
+=======
+    const publisher = redisClient.duplicate();
+    await publisher.connect();
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
     
     // Subscribe to asset update events
     await redisClient.subscribe('asset:update', (message) => {

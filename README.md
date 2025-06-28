@@ -112,7 +112,11 @@ kubectl apply -f kubernetes/frontend.yaml
 ### Cloud Deployment
 
 For cloud-specific deployment instructions, see:
+<<<<<<< HEAD
 - [Azure Deployment Guide](docs/azure-deployment.md)
+=======
+- [Azure Deployment Guide](docs/azure-deployment-guide.md)
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 
 ## Project Structure
 

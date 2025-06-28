@@ -82,9 +82,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+<<<<<<< HEAD
 // Setup socket handlers
 setupSocketHandlers(io);
 
+=======
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 // Connect to databases
 async function initDatabases() {
   try {
@@ -92,6 +95,12 @@ async function initDatabases() {
     await connectMongoDB();
     await connectRedis();
     logger.info('All database connections established');
+<<<<<<< HEAD
+=======
+    
+    // Setup socket handlers only after database connections are established
+    setupSocketHandlers(io);
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
   } catch (error) {
     logger.error('Database connection failed', error);
     process.exit(1);

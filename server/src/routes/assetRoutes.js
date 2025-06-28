@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
+<<<<<<< HEAD
 const assetController = require('../controllers/assetController');
+=======
+const assetController = require('../controllers/assetController.fixed');
+>>>>>>> 368efa71b6c2eec7564d7f16accc1e3f5a43c8b1
 
 // Get all assets (with pagination and filtering)
 router.get('/', authenticateToken, assetController.getAllAssets);
